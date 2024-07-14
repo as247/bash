@@ -1,0 +1,9 @@
+#!/bin/bash
+apt purge mariadb-*
+apt purge mysql-*
+rm -rf /var/lib/mysql
+rm -rf /usr/share/mysql
+rm -rf /var/log/mariadb
+rm -rf /etc/mysql/
+rm -rf /lib/systemd/system/mysql.service
+
