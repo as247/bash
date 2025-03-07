@@ -4,19 +4,10 @@
 MYSQLDUMP_ORIGINAL="/usr/bin/mysqldump.original"
 MYSQLDUMP_WRAPPER="/usr/bin/mysqldump"
 
-# Check if mysqldump.original already exists
-if [ -f "$MYSQLDUMP_ORIGINAL" ]; then
-  echo "mysqldump.original already exists. Aborting."
-  exit 1
-fi
-
-# Move the original mysqldump to mysqldump.original
-echo "Moving original mysqldump to mysqldump.original..."
-sudo mv /usr/bin/mysqldump /usr/bin/mysqldump.original
-
-# Create the wrapper script
-echo "Creating the wrapper script..."
-sudo bash -c "cat > $MYSQLDUMP_WRAPPER" << 'EOF'
+# Function to install the wrapper
+install_wrapper() {
+  echo "Creating the wrapper script..."
+  sudo bash -c "cat > $MYSQLDUMP_WRAPPER" << 'EOF'
 #!/bin/bash
 
 # Replace --ssl with --ssl-mode=REQUIRED in the arguments
@@ -31,8 +22,22 @@ done
 /usr/bin/mysqldump.original "${args[@]}"
 EOF
 
-# Make the wrapper script executable
-echo "Setting executable permissions for the wrapper script..."
-sudo chmod +x /usr/bin/mysqldump
+  # Make the wrapper script executable
+  echo "Setting executable permissions for the wrapper script..."
+  sudo chmod +x "$MYSQLDUMP_WRAPPER"
+}
+
+# Check if the current mysqldump is already the wrapper
+if grep -q "mysqldump.original" "$MYSQLDUMP_WRAPPER" 2>/dev/null; then
+  echo "mysqldump is already wrapped. No action needed."
+  exit 0
+else
+  # Copy the current mysqldump to mysqldump.original, overwriting if it exists
+  echo "Copying current mysqldump to mysqldump.original (overwriting if exists)..."
+  sudo cp -f "$MYSQLDUMP_WRAPPER" "$MYSQLDUMP_ORIGINAL"
+  
+  # Install the wrapper
+  install_wrapper
+fi
 
 echo "mysqldump has been successfully wrapped to handle --ssl parameter."
